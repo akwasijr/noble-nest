@@ -276,7 +276,7 @@ export default function Home() {
       {/* ═══════ HERO — Full bleed, left-aligned, editorial ═══════ */}
       <section className="relative min-h-screen flex items-end pb-20 md:items-center md:pb-0 overflow-hidden">
         <motion.img
-          src="/images/hero-mother-baby.jpg" alt="" loading="eager" decoding="async"
+          src={import.meta.env.BASE_URL + "images/hero-mother-baby.jpg"} alt="" loading="eager" decoding="async"
           className="absolute inset-0 h-full w-full object-cover"
           style={{ y: heroImgY }}
         />
@@ -355,7 +355,7 @@ export default function Home() {
             <motion.div variants={scaleIn} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }}
               className="relative">
               <div className="aspect-[4/5] rounded-[2rem] bg-cream-dark overflow-hidden">
-                <img src="/images/our-story.jpg" alt="Hands arranging baby essentials into a Noble Nest gift box" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+                <img src={import.meta.env.BASE_URL + "images/our-story.jpg"} alt="Hands arranging baby essentials into a Noble Nest gift box" className="h-full w-full object-cover" loading="lazy" decoding="async" />
               </div>
               {/* Decorative offset shape behind image */}
               <div className="absolute -bottom-4 -right-4 -z-10 h-full w-full rounded-[2rem] bg-blush/20" />
@@ -457,7 +457,7 @@ export default function Home() {
             <motion.div variants={slideRight} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }}
               className="relative">
               <div className="aspect-[3/4] rounded-[2rem] bg-cream-dark overflow-hidden">
-                <img src="/images/unboxing.jpg" alt="Mother joyfully unboxing a Noble Nest gift box" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+                <img src={import.meta.env.BASE_URL + "images/unboxing.jpg"} alt="Mother joyfully unboxing a Noble Nest gift box" className="h-full w-full object-cover" loading="lazy" decoding="async" />
               </div>
               <div className="absolute -top-4 -left-4 -z-10 h-full w-full rounded-[2rem] bg-gold/5" />
             </motion.div>
