@@ -1,25 +1,31 @@
 import { useState } from 'react'
 import { useBoxTiers } from '../../hooks/useBoxTiers'
-import { Plus, Trash2, GripVertical, Save, Pencil } from 'lucide-react'
+import { Plus, Trash2, GripVertical, Pencil, Check, X } from 'lucide-react'
 
 export default function AdminBoxes() {
   const { boxTiers, loading, updateBoxTier, addBoxItem, removeBoxItem, updateBoxItem } = useBoxTiers()
+  const [editing, setEditing] = useState(false)
   const [editingPrice, setEditingPrice] = useState<Record<string, string>>({})
   const [editingTag, setEditingTag] = useState<Record<string, string>>({})
   const [editingName, setEditingName] = useState<Record<string, string>>({})
   const [editingItemLabel, setEditingItemLabel] = useState<Record<string, string>>({})
   const [newItem, setNewItem] = useState<Record<string, { label: string; category: 'baby' | 'mum' }>>({})
+  const [hasChanges, setHasChanges] = useState(false)
+
+  const markChanged = () => setHasChanges(true)
 
   const handlePriceSave = async (id: string) => {
     const price = parseFloat(editingPrice[id])
     if (!isNaN(price)) {
       await updateBoxTier(id, { price })
-      setEditingPrice(prev => { const next = { ...prev }; delete next[id]; return next })
+      markChanged()
     }
+    setEditingPrice(prev => { const next = { ...prev }; delete next[id]; return next })
   }
 
   const handleTagSave = async (id: string) => {
     await updateBoxTier(id, { tag: editingTag[id] || null })
+    markChanged()
     setEditingTag(prev => { const next = { ...prev }; delete next[id]; return next })
   }
 
@@ -27,6 +33,7 @@ export default function AdminBoxes() {
     const name = editingName[id]?.trim()
     if (name) {
       await updateBoxTier(id, { name })
+      markChanged()
     }
     setEditingName(prev => { const next = { ...prev }; delete next[id]; return next })
   }
@@ -34,6 +41,7 @@ export default function AdminBoxes() {
   const handleItemLabelSave = async (itemId: string, newLabel: string) => {
     if (newLabel.trim() && updateBoxItem) {
       await updateBoxItem(itemId, { label: newLabel.trim() })
+      markChanged()
     }
     setEditingItemLabel(prev => { const next = { ...prev }; delete next[itemId]; return next })
   }
@@ -48,7 +56,23 @@ export default function AdminBoxes() {
       category: item.category,
       sort_order: tier?.box_items.length || 0,
     })
+    markChanged()
     setNewItem(prev => { const next = { ...prev }; delete next[boxId]; return next })
+  }
+
+  const handleSaveAll = () => {
+    setEditing(false)
+    setHasChanges(false)
+  }
+
+  const handleCancelEdit = () => {
+    setEditing(false)
+    setHasChanges(false)
+    setEditingPrice({})
+    setEditingTag({})
+    setEditingName({})
+    setEditingItemLabel({})
+    setNewItem({})
   }
 
   if (loading) {
@@ -67,8 +91,32 @@ export default function AdminBoxes() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-serif text-[#2c2825]">Baby Boxes</h1>
-      <p className="text-sm text-[#9e9791]">Manage the 3 Noble Nest baby bundle box tiers and their contents.</p>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-serif text-[#2c2825]">Baby Boxes</h1>
+        {editing ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCancelEdit}
+              className="px-3 py-2 rounded-lg text-sm text-[#9e9791] hover:bg-[#faf8f5] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveAll}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#b0925e] text-white text-sm font-medium hover:bg-[#9a7d4e] transition-colors"
+            >
+              <Check size={15} /> {hasChanges ? 'Save changes' : 'Done'}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setEditing(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e8e2d9] text-sm font-medium text-[#2c2825] hover:bg-[#faf8f5] transition-colors"
+          >
+            <Pencil size={15} /> Edit boxes
+          </button>
+        )}
+      </div>
 
       {boxTiers.map(tier => {
         const babyItems = tier.box_items.filter(i => i.category === 'baby').sort((a, b) => a.sort_order - b.sort_order)
@@ -80,7 +128,7 @@ export default function AdminBoxes() {
             {/* Header */}
             <div className="px-5 py-4 bg-[#faf8f5] border-b border-[#e8e2d9] flex items-center justify-between gap-3 flex-wrap">
               <div>
-                {editingName[tier.id] !== undefined ? (
+                {editing && editingName[tier.id] !== undefined ? (
                   <input
                     value={editingName[tier.id]}
                     onChange={e => setEditingName(prev => ({ ...prev, [tier.id]: e.target.value }))}
@@ -91,54 +139,62 @@ export default function AdminBoxes() {
                   />
                 ) : (
                   <h2
-                    className="text-lg font-serif text-[#2c2825] cursor-pointer hover:text-[#b0925e] transition-colors group inline-flex items-center gap-1.5"
-                    onClick={() => setEditingName(prev => ({ ...prev, [tier.id]: tier.name }))}
+                    className={`text-lg font-serif text-[#2c2825] ${editing ? 'cursor-pointer hover:text-[#b0925e] transition-colors' : ''}`}
+                    onClick={() => editing && setEditingName(prev => ({ ...prev, [tier.id]: tier.name }))}
                   >
                     {tier.name}
-                    <Pencil size={12} className="text-[#9e9791] opacity-0 group-hover:opacity-100 transition-opacity" />
                   </h2>
                 )}
               </div>
               <div className="flex items-center gap-3">
                 {/* Tag */}
-                {editingTag[tier.id] !== undefined ? (
-                  <div className="flex items-center gap-1">
-                    <input
-                      value={editingTag[tier.id]}
-                      onChange={e => setEditingTag(prev => ({ ...prev, [tier.id]: e.target.value }))}
-                      placeholder="Tag (e.g. Best Value)"
-                      className="px-2 py-1 rounded border border-[#e8e2d9] text-xs w-32 focus:outline-none focus:ring-1 focus:ring-[#b0925e]/30"
-                    />
-                    <button onClick={() => handleTagSave(tier.id)} className="p-1 rounded text-green-600 hover:bg-green-50"><Save size={14} /></button>
-                  </div>
+                {editing ? (
+                  editingTag[tier.id] !== undefined ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        value={editingTag[tier.id]}
+                        onChange={e => setEditingTag(prev => ({ ...prev, [tier.id]: e.target.value }))}
+                        onBlur={() => handleTagSave(tier.id)}
+                        onKeyDown={e => e.key === 'Enter' && handleTagSave(tier.id)}
+                        placeholder="Tag (e.g. Best Value)"
+                        className="px-2 py-1 rounded border border-[#e8e2d9] text-xs w-32 focus:outline-none focus:ring-1 focus:ring-[#b0925e]/30"
+                        autoFocus
+                      />
+                      <button onClick={() => { setEditingTag(prev => { const next = { ...prev }; delete next[tier.id]; return next }) }} className="p-1 rounded text-gray-400 hover:bg-gray-50"><X size={12} /></button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setEditingTag(prev => ({ ...prev, [tier.id]: tier.tag || '' }))}
+                      className={`text-xs px-2.5 py-1 rounded-full ${tier.tag ? 'bg-[#b0925e]/10 text-[#b0925e]' : 'bg-gray-100 text-[#9e9791]'}`}
+                    >
+                      {tier.tag || '+ Add tag'}
+                    </button>
+                  )
                 ) : (
-                  <button
-                    onClick={() => setEditingTag(prev => ({ ...prev, [tier.id]: tier.tag || '' }))}
-                    className={`text-xs px-2 py-1 rounded-full border ${tier.tag ? 'bg-[#b0925e]/10 text-[#b0925e] border-[#b0925e]/20' : 'border-dashed border-[#9e9791] text-[#9e9791]'}`}
-                  >
-                    {tier.tag || '+ Add tag'}
-                  </button>
+                  tier.tag && <span className="text-xs px-2.5 py-1 rounded-full bg-[#b0925e]/10 text-[#b0925e]">{tier.tag}</span>
                 )}
 
                 {/* Price */}
-                {editingPrice[tier.id] !== undefined ? (
+                {editing && editingPrice[tier.id] !== undefined ? (
                   <div className="flex items-center gap-1">
                     <span className="text-sm text-[#9e9791]">GH₵</span>
                     <input
                       type="number"
                       value={editingPrice[tier.id]}
                       onChange={e => setEditingPrice(prev => ({ ...prev, [tier.id]: e.target.value }))}
+                      onBlur={() => handlePriceSave(tier.id)}
+                      onKeyDown={e => e.key === 'Enter' && handlePriceSave(tier.id)}
                       className="px-2 py-1 rounded border border-[#e8e2d9] text-sm w-20 focus:outline-none focus:ring-1 focus:ring-[#b0925e]/30"
+                      autoFocus
                     />
-                    <button onClick={() => handlePriceSave(tier.id)} className="p-1 rounded text-green-600 hover:bg-green-50"><Save size={14} /></button>
                   </div>
                 ) : (
-                  <button
-                    onClick={() => setEditingPrice(prev => ({ ...prev, [tier.id]: String(tier.price) }))}
-                    className="text-lg font-semibold text-[#2c2825] hover:text-[#b0925e] transition-colors"
+                  <span
+                    className={`text-lg font-semibold text-[#2c2825] ${editing ? 'cursor-pointer hover:text-[#b0925e] transition-colors' : ''}`}
+                    onClick={() => editing && setEditingPrice(prev => ({ ...prev, [tier.id]: String(tier.price) }))}
                   >
                     GH₵ {tier.price.toLocaleString()}
-                  </button>
+                  </span>
                 )}
               </div>
             </div>
@@ -146,12 +202,12 @@ export default function AdminBoxes() {
             <div className="p-5 grid md:grid-cols-2 gap-5">
               {/* Baby Items */}
               <div>
-                <h3 className="text-sm font-semibold text-[#2c2825] mb-2">For baby ({babyItems.length})</h3>
-                <div className="space-y-1.5">
+                <h3 className="text-sm font-medium text-[#9e9791] mb-2">For baby ({babyItems.length})</h3>
+                <div className="space-y-1">
                   {babyItems.map(item => (
-                    <div key={item.id} className="flex items-center gap-2 group">
-                      <GripVertical size={14} className="text-[#e8e2d9] shrink-0" />
-                      {editingItemLabel[item.id] !== undefined ? (
+                    <div key={item.id} className="flex items-center gap-2 group py-0.5">
+                      {editing && <GripVertical size={14} className="text-[#e8e2d9] shrink-0" />}
+                      {editing && editingItemLabel[item.id] !== undefined ? (
                         <input
                           value={editingItemLabel[item.id]}
                           onChange={e => setEditingItemLabel(prev => ({ ...prev, [item.id]: e.target.value }))}
@@ -162,18 +218,21 @@ export default function AdminBoxes() {
                         />
                       ) : (
                         <span
-                          className="text-sm text-[#2c2825] flex-1 cursor-pointer hover:text-[#b0925e] transition-colors"
-                          onClick={() => setEditingItemLabel(prev => ({ ...prev, [item.id]: item.label }))}
+                          className={`text-sm text-[#2c2825] flex-1 ${editing ? 'cursor-pointer hover:text-[#b0925e] transition-colors' : ''}`}
+                          onClick={() => editing && setEditingItemLabel(prev => ({ ...prev, [item.id]: item.label }))}
                         >
+                          {!editing && <span className="text-[#c8c2b8] mr-1.5">·</span>}
                           {item.label}
                         </span>
                       )}
-                      <button
-                        onClick={() => removeBoxItem(item.id)}
-                        className="p-1 rounded text-[#e8e2d9] group-hover:text-red-400 hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {editing && (
+                        <button
+                          onClick={() => removeBoxItem(item.id)}
+                          className="p-1 rounded text-[#e8e2d9] group-hover:text-red-400 hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -181,15 +240,15 @@ export default function AdminBoxes() {
 
               {/* Mum Items */}
               <div>
-                <h3 className="text-sm font-semibold text-[#2c2825] mb-2">For mum ({mumItems.length})</h3>
-                {mumItems.length === 0 && tier.slug === 'essentials' ? (
+                <h3 className="text-sm font-medium text-[#9e9791] mb-2">For mum ({mumItems.length})</h3>
+                {mumItems.length === 0 && !editing ? (
                   <p className="text-xs text-[#9e9791] italic">No mum items in this tier</p>
                 ) : (
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     {mumItems.map(item => (
-                      <div key={item.id} className="flex items-center gap-2 group">
-                        <GripVertical size={14} className="text-[#e8e2d9] shrink-0" />
-                        {editingItemLabel[item.id] !== undefined ? (
+                      <div key={item.id} className="flex items-center gap-2 group py-0.5">
+                        {editing && <GripVertical size={14} className="text-[#e8e2d9] shrink-0" />}
+                        {editing && editingItemLabel[item.id] !== undefined ? (
                           <input
                             value={editingItemLabel[item.id]}
                             onChange={e => setEditingItemLabel(prev => ({ ...prev, [item.id]: e.target.value }))}
@@ -200,51 +259,59 @@ export default function AdminBoxes() {
                           />
                         ) : (
                           <span
-                            className="text-sm text-[#2c2825] flex-1 cursor-pointer hover:text-[#b0925e] transition-colors"
-                            onClick={() => setEditingItemLabel(prev => ({ ...prev, [item.id]: item.label }))}
+                            className={`text-sm text-[#2c2825] flex-1 ${editing ? 'cursor-pointer hover:text-[#b0925e] transition-colors' : ''}`}
+                            onClick={() => editing && setEditingItemLabel(prev => ({ ...prev, [item.id]: item.label }))}
                           >
+                            {!editing && <span className="text-[#c8c2b8] mr-1.5">·</span>}
                             {item.label}
                           </span>
                         )}
-                        <button
-                          onClick={() => removeBoxItem(item.id)}
-                          className="p-1 rounded text-[#e8e2d9] group-hover:text-red-400 hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {editing && (
+                          <button
+                            onClick={() => removeBoxItem(item.id)}
+                            className="p-1 rounded text-[#e8e2d9] group-hover:text-red-400 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     ))}
+                    {mumItems.length === 0 && editing && (
+                      <p className="text-xs text-[#9e9791] italic">No items yet — add one below</p>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Add item */}
-            <div className="px-5 py-3 border-t border-[#e8e2d9] bg-[#faf8f5]">
-              <div className="flex gap-2">
-                <input
-                  value={itemInput.label}
-                  onChange={e => setNewItem(prev => ({ ...prev, [tier.id]: { ...itemInput, label: e.target.value } }))}
-                  placeholder="Add item (e.g. Plush toy)"
-                  className="flex-1 px-3 py-1.5 rounded-lg border border-[#e8e2d9] text-sm focus:outline-none focus:ring-1 focus:ring-[#b0925e]/30 bg-white"
-                  onKeyDown={e => e.key === 'Enter' && handleAddItem(tier.id)}
-                />
-                <select
-                  value={itemInput.category}
-                  onChange={e => setNewItem(prev => ({ ...prev, [tier.id]: { ...itemInput, category: e.target.value as 'baby' | 'mum' } }))}
-                  className="px-2 py-1.5 rounded-lg border border-[#e8e2d9] text-sm bg-white focus:outline-none"
-                >
-                  <option value="baby">Baby</option>
-                  <option value="mum">Mum</option>
-                </select>
-                <button
-                  onClick={() => handleAddItem(tier.id)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#b0925e] text-white text-sm hover:bg-[#9a7d4e] transition-colors"
-                >
-                  <Plus size={14} /> Add
-                </button>
+            {/* Add item — only in edit mode */}
+            {editing && (
+              <div className="px-5 py-3 border-t border-[#e8e2d9] bg-[#faf8f5]">
+                <div className="flex gap-2">
+                  <input
+                    value={itemInput.label}
+                    onChange={e => setNewItem(prev => ({ ...prev, [tier.id]: { ...itemInput, label: e.target.value } }))}
+                    placeholder="Add item (e.g. Plush toy)"
+                    className="flex-1 px-3 py-1.5 rounded-lg border border-[#e8e2d9] text-sm focus:outline-none focus:ring-1 focus:ring-[#b0925e]/30 bg-white"
+                    onKeyDown={e => e.key === 'Enter' && handleAddItem(tier.id)}
+                  />
+                  <select
+                    value={itemInput.category}
+                    onChange={e => setNewItem(prev => ({ ...prev, [tier.id]: { ...itemInput, category: e.target.value as 'baby' | 'mum' } }))}
+                    className="px-2 py-1.5 rounded-lg border border-[#e8e2d9] text-sm bg-white focus:outline-none"
+                  >
+                    <option value="baby">Baby</option>
+                    <option value="mum">Mum</option>
+                  </select>
+                  <button
+                    onClick={() => handleAddItem(tier.id)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#b0925e] text-white text-sm hover:bg-[#9a7d4e] transition-colors"
+                  >
+                    <Plus size={14} /> Add
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )
       })}
