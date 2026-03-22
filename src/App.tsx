@@ -1,5 +1,5 @@
 import { useState, useCallback, lazy, Suspense } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import Shop from './pages/Shop'
 import Checkout from './pages/Checkout'
@@ -26,10 +26,12 @@ function AdminFallback() {
 export default function App() {
   const [introComplete, setIntroComplete] = useState(false)
   const handleIntroComplete = useCallback(() => setIntroComplete(true), [])
+  const location = useLocation()
+  const isAdmin = location.pathname.startsWith('/admin')
 
   return (
     <>
-      {!introComplete && <LogoIntro onComplete={handleIntroComplete} duration={3.5} />}
+      {!isAdmin && !introComplete && <LogoIntro onComplete={handleIntroComplete} duration={3.5} />}
       <Routes>
         {/* Customer-facing */}
         <Route path="/" element={<Home />} />
@@ -39,11 +41,11 @@ export default function App() {
         {/* Admin */}
         <Route path="/admin/login" element={<Suspense fallback={<AdminFallback />}><AdminLogin /></Suspense>} />
         <Route path="/admin" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute><AdminLayout /></ProtectedRoute></Suspense>}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="orders/:id" element={<AdminOrderDetail />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="boxes" element={<AdminBoxes />} />
+          <Route index element={<Suspense fallback={<AdminFallback />}><AdminDashboard /></Suspense>} />
+          <Route path="orders" element={<Suspense fallback={<AdminFallback />}><AdminOrders /></Suspense>} />
+          <Route path="orders/:id" element={<Suspense fallback={<AdminFallback />}><AdminOrderDetail /></Suspense>} />
+          <Route path="products" element={<Suspense fallback={<AdminFallback />}><AdminProducts /></Suspense>} />
+          <Route path="boxes" element={<Suspense fallback={<AdminFallback />}><AdminBoxes /></Suspense>} />
         </Route>
       </Routes>
     </>
