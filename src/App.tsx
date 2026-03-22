@@ -13,6 +13,7 @@ const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'))
 const AdminOrderDetail = lazy(() => import('./pages/admin/AdminOrderDetail'))
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'))
 const AdminBoxes = lazy(() => import('./pages/admin/AdminBoxes'))
+const AdminInventory = lazy(() => import('./pages/admin/AdminInventory'))
 const ProtectedRoute = lazy(() => import('./components/admin/ProtectedRoute'))
 
 function AdminFallback() {
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="orders/:id" element={<Suspense fallback={<AdminFallback />}><AdminOrderDetail /></Suspense>} />
           <Route path="products" element={<Suspense fallback={<AdminFallback />}><AdminProducts /></Suspense>} />
           <Route path="boxes" element={<Suspense fallback={<AdminFallback />}><AdminBoxes /></Suspense>} />
+          <Route path="inventory" element={<Suspense fallback={<AdminFallback />}><AdminInventory /></Suspense>} />
         </Route>
       </Routes>
     </>

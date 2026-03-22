@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { LayoutDashboard, Package, ShoppingBag, Box, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingBag, Box, LogOut, Menu, X, Warehouse } from 'lucide-react'
 import { useState } from 'react'
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { to: '/admin/orders', icon: ShoppingBag, label: 'Orders', end: false },
   { to: '/admin/products', icon: Package, label: 'Products', end: false },
   { to: '/admin/boxes', icon: Box, label: 'Boxes', end: false },
+  { to: '/admin/inventory', icon: Warehouse, label: 'Inventory', end: false },
 ]
 
 export default function AdminLayout() {
