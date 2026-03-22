@@ -28,9 +28,9 @@ export default function AdminLayout() {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#2c2825] text-white flex flex-col transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className={`fixed lg:sticky lg:top-0 lg:h-screen inset-y-0 left-0 z-50 w-64 bg-[#2c2825] text-white flex flex-col transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="p-5 border-b border-white/10">
-          <h1 className="font-serif text-xl tracking-wide text-[#b0925e]">Noble Nest</h1>
+          <h1 className="font-serif text-xl text-[#b0925e]">Noble Nest</h1>
           <p className="text-xs text-white/50 mt-0.5">Admin Panel</p>
         </div>
 

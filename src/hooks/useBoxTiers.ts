@@ -82,5 +82,19 @@ export function useBoxTiers() {
     return { error }
   }
 
-  return { boxTiers, loading, fetchBoxTiers, updateBoxTier, addBoxItem, removeBoxItem }
+  const updateBoxItem = async (itemId: string, updates: Partial<BoxItem>) => {
+    if (!isSupabaseConfigured()) {
+      setBoxTiers(prev => prev.map(b => ({
+        ...b,
+        box_items: b.box_items.map(i => i.id === itemId ? { ...i, ...updates } : i),
+      })))
+      return { error: null }
+    }
+    const supabase = await getSupabase()
+    const { error } = await supabase!.from('box_items').update(updates).eq('id', itemId)
+    if (!error) fetchBoxTiers()
+    return { error }
+  }
+
+  return { boxTiers, loading, fetchBoxTiers, updateBoxTier, addBoxItem, removeBoxItem, updateBoxItem }
 }

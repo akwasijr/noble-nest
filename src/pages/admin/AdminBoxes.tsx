@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useBoxTiers } from '../../hooks/useBoxTiers'
-import { Plus, Trash2, GripVertical, Save } from 'lucide-react'
+import { Plus, Trash2, GripVertical, Save, Pencil } from 'lucide-react'
 
 export default function AdminBoxes() {
-  const { boxTiers, loading, updateBoxTier, addBoxItem, removeBoxItem } = useBoxTiers()
+  const { boxTiers, loading, updateBoxTier, addBoxItem, removeBoxItem, updateBoxItem } = useBoxTiers()
   const [editingPrice, setEditingPrice] = useState<Record<string, string>>({})
   const [editingTag, setEditingTag] = useState<Record<string, string>>({})
+  const [editingName, setEditingName] = useState<Record<string, string>>({})
+  const [editingItemLabel, setEditingItemLabel] = useState<Record<string, string>>({})
   const [newItem, setNewItem] = useState<Record<string, { label: string; category: 'baby' | 'mum' }>>({})
 
   const handlePriceSave = async (id: string) => {
@@ -19,6 +21,21 @@ export default function AdminBoxes() {
   const handleTagSave = async (id: string) => {
     await updateBoxTier(id, { tag: editingTag[id] || null })
     setEditingTag(prev => { const next = { ...prev }; delete next[id]; return next })
+  }
+
+  const handleNameSave = async (id: string) => {
+    const name = editingName[id]?.trim()
+    if (name) {
+      await updateBoxTier(id, { name })
+    }
+    setEditingName(prev => { const next = { ...prev }; delete next[id]; return next })
+  }
+
+  const handleItemLabelSave = async (itemId: string, newLabel: string) => {
+    if (newLabel.trim() && updateBoxItem) {
+      await updateBoxItem(itemId, { label: newLabel.trim() })
+    }
+    setEditingItemLabel(prev => { const next = { ...prev }; delete next[itemId]; return next })
   }
 
   const handleAddItem = async (boxId: string) => {
@@ -63,8 +80,24 @@ export default function AdminBoxes() {
             {/* Header */}
             <div className="px-5 py-4 bg-[#faf8f5] border-b border-[#e8e2d9] flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <h2 className="text-lg font-serif text-[#2c2825]">{tier.name}</h2>
-                <p className="text-xs text-[#9e9791] font-mono">{tier.slug}</p>
+                {editingName[tier.id] !== undefined ? (
+                  <input
+                    value={editingName[tier.id]}
+                    onChange={e => setEditingName(prev => ({ ...prev, [tier.id]: e.target.value }))}
+                    onBlur={() => handleNameSave(tier.id)}
+                    onKeyDown={e => e.key === 'Enter' && handleNameSave(tier.id)}
+                    autoFocus
+                    className="text-lg font-serif text-[#2c2825] bg-white px-2 py-1 rounded border border-[#e8e2d9] focus:outline-none focus:ring-1 focus:ring-[#b0925e]/30"
+                  />
+                ) : (
+                  <h2
+                    className="text-lg font-serif text-[#2c2825] cursor-pointer hover:text-[#b0925e] transition-colors group inline-flex items-center gap-1.5"
+                    onClick={() => setEditingName(prev => ({ ...prev, [tier.id]: tier.name }))}
+                  >
+                    {tier.name}
+                    <Pencil size={12} className="text-[#9e9791] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </h2>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 {/* Tag */}
@@ -113,12 +146,28 @@ export default function AdminBoxes() {
             <div className="p-5 grid md:grid-cols-2 gap-5">
               {/* Baby Items */}
               <div>
-                <h3 className="text-sm font-semibold text-[#2c2825] mb-2">For Baby ({babyItems.length})</h3>
+                <h3 className="text-sm font-semibold text-[#2c2825] mb-2">For baby ({babyItems.length})</h3>
                 <div className="space-y-1.5">
                   {babyItems.map(item => (
                     <div key={item.id} className="flex items-center gap-2 group">
                       <GripVertical size={14} className="text-[#e8e2d9] shrink-0" />
-                      <span className="text-sm text-[#2c2825] flex-1">{item.label}</span>
+                      {editingItemLabel[item.id] !== undefined ? (
+                        <input
+                          value={editingItemLabel[item.id]}
+                          onChange={e => setEditingItemLabel(prev => ({ ...prev, [item.id]: e.target.value }))}
+                          onBlur={() => handleItemLabelSave(item.id, editingItemLabel[item.id])}
+                          onKeyDown={e => e.key === 'Enter' && handleItemLabelSave(item.id, editingItemLabel[item.id])}
+                          autoFocus
+                          className="flex-1 text-sm text-[#2c2825] bg-white px-2 py-0.5 rounded border border-[#e8e2d9] focus:outline-none focus:ring-1 focus:ring-[#b0925e]/30"
+                        />
+                      ) : (
+                        <span
+                          className="text-sm text-[#2c2825] flex-1 cursor-pointer hover:text-[#b0925e] transition-colors"
+                          onClick={() => setEditingItemLabel(prev => ({ ...prev, [item.id]: item.label }))}
+                        >
+                          {item.label}
+                        </span>
+                      )}
                       <button
                         onClick={() => removeBoxItem(item.id)}
                         className="p-1 rounded text-[#e8e2d9] group-hover:text-red-400 hover:bg-red-50 transition-colors"
@@ -132,7 +181,7 @@ export default function AdminBoxes() {
 
               {/* Mum Items */}
               <div>
-                <h3 className="text-sm font-semibold text-[#2c2825] mb-2">For Mum ({mumItems.length})</h3>
+                <h3 className="text-sm font-semibold text-[#2c2825] mb-2">For mum ({mumItems.length})</h3>
                 {mumItems.length === 0 && tier.slug === 'essentials' ? (
                   <p className="text-xs text-[#9e9791] italic">No mum items in this tier</p>
                 ) : (
@@ -140,7 +189,23 @@ export default function AdminBoxes() {
                     {mumItems.map(item => (
                       <div key={item.id} className="flex items-center gap-2 group">
                         <GripVertical size={14} className="text-[#e8e2d9] shrink-0" />
-                        <span className="text-sm text-[#2c2825] flex-1">{item.label}</span>
+                        {editingItemLabel[item.id] !== undefined ? (
+                          <input
+                            value={editingItemLabel[item.id]}
+                            onChange={e => setEditingItemLabel(prev => ({ ...prev, [item.id]: e.target.value }))}
+                            onBlur={() => handleItemLabelSave(item.id, editingItemLabel[item.id])}
+                            onKeyDown={e => e.key === 'Enter' && handleItemLabelSave(item.id, editingItemLabel[item.id])}
+                            autoFocus
+                            className="flex-1 text-sm text-[#2c2825] bg-white px-2 py-0.5 rounded border border-[#e8e2d9] focus:outline-none focus:ring-1 focus:ring-[#b0925e]/30"
+                          />
+                        ) : (
+                          <span
+                            className="text-sm text-[#2c2825] flex-1 cursor-pointer hover:text-[#b0925e] transition-colors"
+                            onClick={() => setEditingItemLabel(prev => ({ ...prev, [item.id]: item.label }))}
+                          >
+                            {item.label}
+                          </span>
+                        )}
                         <button
                           onClick={() => removeBoxItem(item.id)}
                           className="p-1 rounded text-[#e8e2d9] group-hover:text-red-400 hover:bg-red-50 transition-colors"

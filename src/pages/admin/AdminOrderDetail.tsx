@@ -49,7 +49,7 @@ export default function AdminOrderDetail() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-mono font-semibold text-[#2c2825]">{order.order_number}</h1>
+          <h1 className="text-xl font-serif font-semibold text-[#2c2825]">{order.order_number}</h1>
           <p className="text-sm text-[#9e9791]">Placed {new Date(order.created_at).toLocaleString()}</p>
         </div>
         <OrderStatusBadge status={order.status} />
@@ -57,24 +57,40 @@ export default function AdminOrderDetail() {
 
       {/* Status Timeline */}
       <div className="bg-white rounded-xl border border-[#e8e2d9] p-5">
-        <h2 className="text-sm font-semibold text-[#2c2825] mb-4">Order Status</h2>
-        <div className="flex items-center gap-1 overflow-x-auto pb-2">
+        <h2 className="text-sm font-semibold text-[#2c2825] mb-4">Order status</h2>
+        <div className="flex items-center overflow-x-auto pb-2">
           {STATUS_FLOW.map((s, i) => {
             const currentIdx = STATUS_FLOW.indexOf(order.status as any)
-            const isActive = i <= currentIdx
+            const isCompleted = i < currentIdx
             const isCurrent = s === order.status
             const config = statusConfig[s]
             return (
-              <button
-                key={s}
-                onClick={() => handleStatusChange(s)}
-                className={`flex-1 min-w-[80px] py-2 px-2 rounded-lg text-xs font-medium text-center transition-all ${
-                  isCurrent ? `${config.bg} ${config.color} ring-2 ring-offset-1 ring-current` :
-                  isActive ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                }`}
-              >
-                {config.label}
-              </button>
+              <div key={s} className="flex items-center flex-1 min-w-0 last:flex-none">
+                <button
+                  onClick={() => handleStatusChange(s)}
+                  className="flex flex-col items-center gap-1.5 min-w-[72px] group"
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all ${
+                    isCompleted ? 'bg-emerald-500 text-white' :
+                    isCurrent ? 'bg-[#b0925e] text-white ring-4 ring-[#b0925e]/20' :
+                    'border-2 border-gray-200 text-gray-300 group-hover:border-gray-300'
+                  }`}>
+                    {isCompleted ? '✓' : i + 1}
+                  </div>
+                  <span className={`text-xs text-center leading-tight ${
+                    isCurrent ? 'font-semibold text-[#2c2825]' :
+                    isCompleted ? 'font-medium text-emerald-600' :
+                    'text-[#9e9791]'
+                  }`}>
+                    {config.label}
+                  </span>
+                </button>
+                {i < STATUS_FLOW.length - 1 && (
+                  <div className={`flex-1 h-0.5 mx-1 rounded-full ${
+                    isCompleted ? 'bg-emerald-400' : 'bg-gray-200'
+                  }`} />
+                )}
+              </div>
             )
           })}
         </div>
@@ -90,7 +106,7 @@ export default function AdminOrderDetail() {
 
       <div className="grid md:grid-cols-2 gap-5">
         {/* Customer Info */}
-        <div className="bg-white rounded-xl border border-[#e8e2d9] p-5 space-y-3">
+        <div className="bg-[#faf8f5] rounded-xl shadow-sm p-5 space-y-3">
           <h2 className="text-sm font-semibold text-[#2c2825]">Customer</h2>
           <p className="text-sm text-[#2c2825] font-medium">{order.customer_name}</p>
           <div className="flex items-center gap-2 text-sm text-[#9e9791]">
@@ -110,21 +126,21 @@ export default function AdminOrderDetail() {
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-green-600 hover:text-green-700 font-medium mt-2"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#25D366] text-white text-sm font-medium hover:bg-[#1fb855] transition-colors mt-2"
           >
             <MessageCircle size={16} /> Message on WhatsApp
           </a>
         </div>
 
         {/* Payment */}
-        <div className="bg-white rounded-xl border border-[#e8e2d9] p-5 space-y-3">
+        <div className="bg-[#faf8f5] rounded-xl shadow-sm p-5 space-y-3">
           <h2 className="text-sm font-semibold text-[#2c2825]">Payment</h2>
           <div className="flex items-center gap-2 text-sm">
             <CreditCard size={14} className="text-[#9e9791]" />
-            <span className="uppercase font-medium text-[#2c2825]">{order.payment_method || 'N/A'}</span>
+            <span className="font-medium text-[#2c2825]">{order.payment_method || 'N/A'}</span>
           </div>
           {order.payment_ref && (
-            <p className="text-sm text-[#9e9791]">Ref: <span className="font-mono">{order.payment_ref}</span></p>
+            <p className="text-sm text-[#9e9791]">Ref: <span className="font-medium">{order.payment_ref}</span></p>
           )}
           <div className="space-y-1.5 pt-2 border-t border-[#e8e2d9]">
             <div className="flex justify-between text-sm"><span className="text-[#9e9791]">Subtotal</span><span>GH₵ {order.subtotal.toLocaleString()}</span></div>
@@ -139,16 +155,16 @@ export default function AdminOrderDetail() {
       {/* Order Items */}
       <div className="bg-white rounded-xl border border-[#e8e2d9] p-5">
         <h2 className="text-sm font-semibold text-[#2c2825] mb-3">Items</h2>
-        <div className="divide-y divide-[#e8e2d9]">
+        <div className="space-y-2.5">
           {order.order_items.map(item => (
-            <div key={item.id} className="flex items-center justify-between py-3">
-              <div>
-                <span className={`text-xs px-1.5 py-0.5 rounded font-medium mr-2 ${
-                  item.item_type === 'box' ? 'bg-[#b0925e]/10 text-[#b0925e]' : 'bg-blue-50 text-blue-600'
+            <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-[#faf8f5]">
+              <div className="flex items-center gap-3">
+                <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                  item.item_type === 'box' ? 'bg-[#b0925e]/10 text-[#b0925e]' : 'bg-sky-50 text-sky-600'
                 }`}>
                   {item.item_type === 'box' ? 'Box' : 'Product'}
                 </span>
-                <span className="text-sm text-[#2c2825]">{item.item_name}</span>
+                <span className="text-sm font-medium text-[#2c2825]">{item.item_name}</span>
               </div>
               <div className="text-sm text-right">
                 <span className="text-[#9e9791]">{item.quantity}x </span>

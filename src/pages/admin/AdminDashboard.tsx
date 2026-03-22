@@ -2,7 +2,7 @@ import { useOrders } from '../../hooks/useOrders'
 import { useProducts } from '../../hooks/useProducts'
 import { Link } from 'react-router-dom'
 import OrderStatusBadge from '../../components/admin/OrderStatusBadge'
-import { ShoppingBag, Package, TrendingUp, Clock } from 'lucide-react'
+import { ShoppingBag, Package, Wallet, Clock } from 'lucide-react'
 
 export default function AdminDashboard() {
   const { orders, loading: ordersLoading } = useOrders()
@@ -18,10 +18,10 @@ export default function AdminDashboard() {
   const recentOrders = orders.slice(0, 5)
 
   const stats = [
-    { label: 'Total Orders', value: totalOrders, icon: ShoppingBag, color: 'bg-blue-50 text-blue-600' },
-    { label: 'Revenue', value: `GH₵ ${totalRevenue.toLocaleString()}`, icon: TrendingUp, color: 'bg-green-50 text-green-600' },
-    { label: 'Pending', value: pendingOrders, icon: Clock, color: 'bg-amber-50 text-amber-600' },
-    { label: 'Products', value: totalProducts, icon: Package, color: 'bg-purple-50 text-purple-600' },
+    { label: 'Total Orders', value: totalOrders, icon: ShoppingBag, color: 'text-sky-600' },
+    { label: 'Revenue', value: `GH₵ ${totalRevenue.toLocaleString()}`, icon: Wallet, color: 'text-emerald-600' },
+    { label: 'Pending', value: pendingOrders, icon: Clock, color: 'text-amber-600' },
+    { label: 'Products', value: totalProducts, icon: Package, color: 'text-violet-600' },
   ]
 
   if (loading) {
@@ -49,9 +49,7 @@ export default function AdminDashboard() {
         {stats.map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-white rounded-xl p-5 border border-[#e8e2d9]">
             <div className="flex items-center gap-3 mb-2">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${color}`}>
-                <Icon size={18} />
-              </div>
+              <Icon size={20} className={color} />
             </div>
             <p className="text-xs text-[#9e9791] font-medium">{label}</p>
             <p className="text-xl font-semibold text-[#2c2825] mt-0.5">{value}</p>
@@ -81,7 +79,7 @@ export default function AdminDashboard() {
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm text-[#2c2825]">{order.order_number}</span>
+                    <span className="text-sm font-medium text-[#2c2825]">{order.order_number}</span>
                     <OrderStatusBadge status={order.status} />
                   </div>
                   <p className="text-sm text-[#9e9791] mt-0.5 truncate">{order.customer_name} - {order.delivery_area}</p>

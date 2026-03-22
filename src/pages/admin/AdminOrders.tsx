@@ -93,7 +93,7 @@ export default function AdminOrders() {
               <div className="flex items-start justify-between gap-4">
                 <Link to={`/admin/orders/${order.id}`} className="min-w-0 flex-1 group">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-sm font-medium text-[#2c2825] group-hover:text-[#b0925e] transition-colors">
+                    <span className="text-sm font-medium text-[#2c2825] group-hover:text-[#b0925e] transition-colors">
                       {order.order_number}
                     </span>
                     <OrderStatusBadge status={order.status} />
