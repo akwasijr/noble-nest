@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useProducts } from '../../hooks/useProducts'
-import { Plus, Pencil, Trash2, Check, X, PackageCheck, PackageX, Package, Tag, Grid3X3 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Check, X, PackageCheck, PackageX, Package, Tag, Grid3X3, Upload } from 'lucide-react'
 import type { Product } from '../../types/database'
 
 const DEFAULT_CATEGORIES = [
@@ -16,6 +16,8 @@ export default function AdminProducts() {
   const [editData, setEditData] = useState<Partial<Product>>({})
   const [showAdd, setShowAdd] = useState(false)
   const [newProduct, setNewProduct] = useState({ slug: '', name: '', description: '', price: 0, category: 'baby-care', image_url: '', in_stock: true, sort_order: 0 })
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'products' | 'categories'>('products')
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES)
@@ -36,11 +38,30 @@ export default function AdminProducts() {
     setEditingId(null)
   }
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result as string
+      setImagePreview(dataUrl)
+      setNewProduct(p => ({ ...p, image_url: dataUrl }))
+    }
+    reader.readAsDataURL(file)
+  }
+
   const handleCreate = async () => {
     if (!newProduct.name || !newProduct.slug) return
     await createProduct(newProduct as any)
     setNewProduct({ slug: '', name: '', description: '', price: 0, category: categories[0]?.id || 'baby-care', image_url: '', in_stock: true, sort_order: products.length })
+    setImagePreview(null)
     setShowAdd(false)
+  }
+
+  const closeModal = () => {
+    setShowAdd(false)
+    setNewProduct({ slug: '', name: '', description: '', price: 0, category: categories[0]?.id || 'baby-care', image_url: '', in_stock: true, sort_order: products.length })
+    setImagePreview(null)
   }
 
   const handleDelete = async (id: string) => {
@@ -229,37 +250,79 @@ export default function AdminProducts() {
             })}
           </div>
 
-          {/* Add Product Form */}
+          {/* Add Product Modal */}
           {showAdd && (
-            <div className="bg-white rounded-xl border border-[#e8e2d9] p-5 space-y-3">
-              <h3 className="font-medium text-sm text-[#2c2825]">New product</h3>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-[#9e9791] mb-1 block">Name</label>
-                  <input value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-') }))} placeholder="Product name" className="w-full px-3 py-2 rounded-lg border border-[#e8e2d9] text-sm focus:outline-none focus:ring-2 focus:ring-[#b0925e]/30" />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeModal} />
+              <div className="relative bg-white rounded-2xl border border-[#e8e2d9] shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                <div className="px-6 py-4 border-b border-[#e8e2d9] flex items-center justify-between">
+                  <h3 className="text-lg font-serif text-[#2c2825]">Add new product</h3>
+                  <button onClick={closeModal} className="p-1.5 rounded-lg text-[#9e9791] hover:bg-[#faf8f5] hover:text-[#2c2825]"><X size={18} /></button>
                 </div>
-                <div>
-                  <label className="text-xs text-[#9e9791] mb-1 block">Price (GH₵)</label>
-                  <input type="number" value={newProduct.price || ''} onChange={e => setNewProduct(p => ({ ...p, price: Number(e.target.value) }))} placeholder="0" className="w-full px-3 py-2 rounded-lg border border-[#e8e2d9] text-sm focus:outline-none focus:ring-2 focus:ring-[#b0925e]/30" />
+                <div className="p-6 space-y-4">
+                  {/* Image upload */}
+                  <div>
+                    <label className="text-xs font-medium text-[#9e9791] mb-1.5 block">Product image</label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                    {imagePreview ? (
+                      <div className="relative group">
+                        <img src={imagePreview} alt="Preview" className="w-full h-40 rounded-xl object-cover border border-[#e8e2d9]" />
+                        <button
+                          onClick={() => { setImagePreview(null); setNewProduct(p => ({ ...p, image_url: '' })); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/90 text-[#9e9791] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full h-32 rounded-xl border-2 border-dashed border-[#e8e2d9] flex flex-col items-center justify-center gap-2 text-[#9e9791] hover:border-[#b0925e] hover:text-[#b0925e] transition-colors"
+                      >
+                        <Upload size={24} />
+                        <span className="text-sm">Click to upload image</span>
+                        <span className="text-xs">PNG, JPG up to 5MB</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <label className="text-xs font-medium text-[#9e9791] mb-1.5 block">Product name</label>
+                      <input value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-') }))} placeholder="e.g. Baby Lotion" className="w-full px-3 py-2.5 rounded-lg border border-[#e8e2d9] text-sm focus:outline-none focus:ring-2 focus:ring-[#b0925e]/30" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-[#9e9791] mb-1.5 block">Price (GH₵)</label>
+                      <input type="number" value={newProduct.price || ''} onChange={e => setNewProduct(p => ({ ...p, price: Number(e.target.value) }))} placeholder="0" className="w-full px-3 py-2.5 rounded-lg border border-[#e8e2d9] text-sm focus:outline-none focus:ring-2 focus:ring-[#b0925e]/30" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-[#9e9791] mb-1.5 block">Category</label>
+                      <select value={newProduct.category} onChange={e => setNewProduct(p => ({ ...p, category: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-[#e8e2d9] text-sm focus:outline-none focus:ring-2 focus:ring-[#b0925e]/30 bg-white">
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-[#9e9791] mb-1.5 block">Description</label>
+                    <textarea value={newProduct.description} onChange={e => setNewProduct(p => ({ ...p, description: e.target.value }))} placeholder="Brief product description" rows={3} className="w-full px-3 py-2.5 rounded-lg border border-[#e8e2d9] text-sm focus:outline-none focus:ring-2 focus:ring-[#b0925e]/30 resize-none" />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs text-[#9e9791] mb-1 block">Category</label>
-                  <select value={newProduct.category} onChange={e => setNewProduct(p => ({ ...p, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[#e8e2d9] text-sm focus:outline-none focus:ring-2 focus:ring-[#b0925e]/30 bg-white">
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-                  </select>
+                <div className="px-6 py-4 border-t border-[#e8e2d9] bg-[#faf8f5] rounded-b-2xl flex items-center justify-end gap-2">
+                  <button onClick={closeModal} className="px-4 py-2.5 rounded-lg text-sm text-[#9e9791] hover:bg-white transition-colors">Cancel</button>
+                  <button
+                    onClick={handleCreate}
+                    disabled={!newProduct.name}
+                    className="px-5 py-2.5 rounded-lg bg-[#b0925e] text-white text-sm font-medium hover:bg-[#9a7d4e] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Add product
+                  </button>
                 </div>
-                <div>
-                  <label className="text-xs text-[#9e9791] mb-1 block">Image URL</label>
-                  <input value={newProduct.image_url} onChange={e => setNewProduct(p => ({ ...p, image_url: e.target.value }))} placeholder="https://..." className="w-full px-3 py-2 rounded-lg border border-[#e8e2d9] text-sm focus:outline-none focus:ring-2 focus:ring-[#b0925e]/30" />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-[#9e9791] mb-1 block">Description</label>
-                <input value={newProduct.description} onChange={e => setNewProduct(p => ({ ...p, description: e.target.value }))} placeholder="Brief product description" className="w-full px-3 py-2 rounded-lg border border-[#e8e2d9] text-sm focus:outline-none focus:ring-2 focus:ring-[#b0925e]/30" />
-              </div>
-              <div className="flex gap-2 pt-1">
-                <button onClick={handleCreate} className="px-4 py-2 rounded-lg bg-[#b0925e] text-white text-sm font-medium hover:bg-[#9a7d4e] transition-colors">Create product</button>
-                <button onClick={() => setShowAdd(false)} className="px-4 py-2 rounded-lg text-sm text-[#9e9791] hover:bg-[#faf8f5] transition-colors">Cancel</button>
               </div>
             </div>
           )}
