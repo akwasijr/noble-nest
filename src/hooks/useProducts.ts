@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
 import { products as fallbackProducts } from '../data/products'
 import type { Product } from '../types/database'
 
@@ -26,6 +26,8 @@ export function useProducts() {
       return
     }
 
+    const supabase = await getSupabase()
+    if (!supabase) return
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -46,7 +48,8 @@ export function useProducts() {
       setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
       return { error: null }
     }
-    const { error } = await supabase.from('products').update(updates).eq('id', id)
+    const supabase = await getSupabase()
+    const { error } = await supabase!.from('products').update(updates).eq('id', id)
     if (!error) fetchProducts()
     return { error }
   }
@@ -57,7 +60,8 @@ export function useProducts() {
       setProducts(prev => [...prev, newProduct])
       return { error: null, data: newProduct }
     }
-    const { data, error } = await supabase.from('products').insert(product).select().single()
+    const supabase = await getSupabase()
+    const { data, error } = await supabase!.from('products').insert(product).select().single()
     if (!error) fetchProducts()
     return { error, data }
   }
@@ -67,7 +71,8 @@ export function useProducts() {
       setProducts(prev => prev.filter(p => p.id !== id))
       return { error: null }
     }
-    const { error } = await supabase.from('products').delete().eq('id', id)
+    const supabase = await getSupabase()
+    const { error } = await supabase!.from('products').delete().eq('id', id)
     if (!error) fetchProducts()
     return { error }
   }

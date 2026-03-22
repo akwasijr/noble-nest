@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
 import type { OrderWithItems, Order } from '../types/database'
 
 // Demo orders for when Supabase isn't configured
@@ -50,6 +50,8 @@ export function useOrders() {
       return
     }
 
+    const supabase = await getSupabase()
+    if (!supabase) return
     const { data, error } = await supabase
       .from('orders')
       .select('*, order_items(*)')
@@ -70,7 +72,8 @@ export function useOrders() {
       setOrders(prev => prev.map(o => o.id === id ? { ...o, status, updated_at: new Date().toISOString() } : o))
       return { error: null }
     }
-    const { error } = await supabase.from('orders').update({ status }).eq('id', id)
+    const supabase = await getSupabase()
+    const { error } = await supabase!.from('orders').update({ status }).eq('id', id)
     if (!error) fetchOrders()
     return { error }
   }

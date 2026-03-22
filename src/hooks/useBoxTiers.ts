@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
 import { boxTiers as fallbackBoxes } from '../data/products'
 import type { BoxTierWithItems, BoxItem } from '../types/database'
 
@@ -30,6 +30,8 @@ export function useBoxTiers() {
       return
     }
 
+    const supabase = await getSupabase()
+    if (!supabase) return
     const { data, error } = await supabase
       .from('box_tiers')
       .select('*, box_items(*)')
@@ -50,8 +52,9 @@ export function useBoxTiers() {
       setBoxTiers(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b))
       return { error: null }
     }
+    const supabase = await getSupabase()
     const { box_items: _items, ...tierUpdates } = updates as any
-    const { error } = await supabase.from('box_tiers').update(tierUpdates).eq('id', id)
+    const { error } = await supabase!.from('box_tiers').update(tierUpdates).eq('id', id)
     if (!error) fetchBoxTiers()
     return { error }
   }
@@ -62,7 +65,8 @@ export function useBoxTiers() {
       setBoxTiers(prev => prev.map(b => b.id === boxTierId ? { ...b, box_items: [...b.box_items, newItem] } : b))
       return { error: null }
     }
-    const { error } = await supabase.from('box_items').insert(item)
+    const supabase = await getSupabase()
+    const { error } = await supabase!.from('box_items').insert(item)
     if (!error) fetchBoxTiers()
     return { error }
   }
@@ -72,7 +76,8 @@ export function useBoxTiers() {
       setBoxTiers(prev => prev.map(b => ({ ...b, box_items: b.box_items.filter(i => i.id !== itemId) })))
       return { error: null }
     }
-    const { error } = await supabase.from('box_items').delete().eq('id', itemId)
+    const supabase = await getSupabase()
+    const { error } = await supabase!.from('box_items').delete().eq('id', itemId)
     if (!error) fetchBoxTiers()
     return { error }
   }

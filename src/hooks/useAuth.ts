@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { isSupabaseConfigured, getSupabase, getSupabaseSync } from '../lib/supabase'
 
 interface AuthState {
   user: { email: string } | null
@@ -11,26 +11,30 @@ export function useAuth() {
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
-      // Demo mode — auto-login
       setState({ user: { email: 'admin@noblenest.com' }, loading: false })
       return
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setState({
-        user: session?.user ? { email: session.user.email || '' } : null,
-        loading: false,
+    let sub: any
+    getSupabase().then(supabase => {
+      if (!supabase) return
+      supabase.auth.getSession().then(({ data: { session } }: any) => {
+        setState({
+          user: session?.user ? { email: session.user.email || '' } : null,
+          loading: false,
+        })
       })
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+        setState({
+          user: session?.user ? { email: session.user.email || '' } : null,
+          loading: false,
+        })
+      })
+      sub = subscription
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setState({
-        user: session?.user ? { email: session.user.email || '' } : null,
-        loading: false,
-      })
-    })
-
-    return () => subscription.unsubscribe()
+    return () => sub?.unsubscribe()
   }, [])
 
   const signIn = async (email: string, password: string) => {
@@ -38,7 +42,8 @@ export function useAuth() {
       setState({ user: { email }, loading: false })
       return { error: null }
     }
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const supabase = await getSupabase()
+    const { error } = await supabase!.auth.signInWithPassword({ email, password })
     return { error }
   }
 
@@ -47,7 +52,8 @@ export function useAuth() {
       setState({ user: null, loading: false })
       return
     }
-    await supabase.auth.signOut()
+    const supabase = getSupabaseSync()
+    if (supabase) await supabase.auth.signOut()
   }
 
   return { ...state, signIn, signOut }
