@@ -37,6 +37,32 @@ const DEMO_ORDERS: OrderWithItems[] = [
       { id: '3b', order_id: '3', item_type: 'product', item_name: 'Diapers', item_price: 45, quantity: 1 },
     ],
   },
+  {
+    id: '4', order_number: 'NN-J1K2L3', status: 'return_requested',
+    customer_name: 'Nana Yaa Owusu', customer_phone: '024 888 3344',
+    delivery_area: 'Airport Residential', delivery_address: '22 Airport Bypass, Airport Residential',
+    order_notes: 'Wrong size onesies received — requesting exchange', payment_method: 'mtn', payment_ref: 'MTN44556677',
+    subtotal: 400, delivery_fee: 30, total: 430,
+    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    order_items: [{ id: '4a', order_id: '4', item_type: 'box', item_name: 'The Essentials', item_price: 400, quantity: 1 }],
+    issue_type: 'wrong_item',
+    issue_note: 'Customer received size 6-12m onesies instead of newborn. Wants exchange for correct size.',
+    issue_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: '5', order_number: 'NN-M4N5O6', status: 'lost',
+    customer_name: 'Kofi Adu', customer_phone: '055 222 9988',
+    delivery_area: 'Osu', delivery_address: '17 Ring Road, Osu',
+    order_notes: null, payment_method: 'vodafone', payment_ref: 'VOD11223344',
+    subtotal: 750, delivery_fee: 30, total: 780,
+    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    order_items: [{ id: '5a', order_id: '5', item_type: 'box', item_name: 'The Deluxe', item_price: 750, quantity: 1 }],
+    issue_type: 'lost_in_transit',
+    issue_note: 'Bolt driver confirmed pickup but delivery was never completed. Customer did not receive package. Driver unreachable.',
+    issue_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
 ]
 
 export function useOrders() {

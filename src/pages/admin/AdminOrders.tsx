@@ -13,6 +13,11 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'out_for_delivery', label: 'Out for Delivery' },
   { value: 'delivered', label: 'Delivered' },
   { value: 'cancelled', label: 'Cancelled' },
+  { value: 'return_requested', label: 'Return requested' },
+  { value: 'returned', label: 'Returned' },
+  { value: 'refunded', label: 'Refunded' },
+  { value: 'lost', label: 'Lost' },
+  { value: 'damaged', label: 'Damaged' },
 ]
 
 export default function AdminOrders() {

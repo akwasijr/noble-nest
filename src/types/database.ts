@@ -37,7 +37,7 @@ export interface BoxItem {
 export interface Order {
   id: string
   order_number: string
-  status: 'pending' | 'confirmed' | 'preparing' | 'out_for_delivery' | 'delivered' | 'cancelled'
+  status: 'pending' | 'confirmed' | 'preparing' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'return_requested' | 'returned' | 'refunded' | 'lost' | 'damaged'
   customer_name: string
   customer_phone: string
   delivery_area: string
@@ -48,6 +48,9 @@ export interface Order {
   subtotal: number
   delivery_fee: number
   total: number
+  issue_type?: string | null
+  issue_note?: string | null
+  issue_date?: string | null
   created_at: string
   updated_at: string
 }
