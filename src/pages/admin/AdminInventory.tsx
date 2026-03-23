@@ -28,6 +28,7 @@ export default function AdminInventory() {
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [stockPage, setStockPage] = useState(1)
   const [historyPage, setHistoryPage] = useState(1)
+  const [filterCat, setFilterCat] = useState('all')
 
   if (loading) {
     return (
@@ -65,12 +66,21 @@ export default function AdminInventory() {
 
   const statusOrder = { out: 0, low: 1, ok: 2 }
 
+  const CATEGORIES = [
+    { id: 'all', label: 'All' },
+    { id: 'baby-care', label: 'Baby Care' },
+    { id: 'feeding', label: 'Feeding' },
+    { id: 'clothing', label: 'Clothing' },
+    { id: 'accessories', label: 'Accessories' },
+  ]
+
   const filteredStock = stock
     .filter(s => {
       if (filterStatus === 'low') return getStatus(s) === 'low'
       if (filterStatus === 'out') return getStatus(s) === 'out'
       return true
     })
+    .filter(s => filterCat === 'all' || s.category === filterCat)
     .filter(s => !search || s.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
       const dir = sortDir === 'asc' ? 1 : -1
@@ -92,6 +102,7 @@ export default function AdminInventory() {
   // Reset page when filters change
   const handleFilterChange = (f: 'all' | 'low' | 'out') => { setFilterStatus(f); setStockPage(1) }
   const handleSearchChange = (v: string) => { setSearch(v); setStockPage(1) }
+  const handleCatChange = (c: string) => { setFilterCat(c); setStockPage(1) }
 
   const handleAdjust = () => {
     const qty = parseInt(adjQty)
@@ -207,6 +218,21 @@ export default function AdminInventory() {
                 }`}
               >
                 {f === 'all' ? `All (${stock.length})` : f === 'low' ? `Low (${lowStockItems.length})` : `Out (${outOfStock.length})`}
+              </button>
+            ))}
+          </div>
+
+          {/* Category filter */}
+          <div className="flex gap-2 flex-wrap">
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => handleCatChange(cat.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  filterCat === cat.id ? 'bg-[#b0925e] text-white' : 'bg-white text-[#9e9791] border border-[#e8e2d9] hover:text-[#2c2825]'
+                }`}
+              >
+                {cat.label}
               </button>
             ))}
           </div>
