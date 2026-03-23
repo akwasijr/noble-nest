@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { useInventory, type StockItem } from '../../hooks/useInventory'
-import { Package, AlertTriangle, PackageX, TrendingUp, ArrowDownCircle, ArrowUpCircle, SlidersHorizontal, Box, Search, X, Check, Minus, Plus } from 'lucide-react'
+import { Package, AlertTriangle, PackageX, TrendingUp, ArrowDownCircle, ArrowUpCircle, SlidersHorizontal, Box, Search, X, Check, Minus, Plus, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
 
 type Tab = 'overview' | 'history'
+type SortField = 'name' | 'currentStock' | 'value' | 'status'
+type SortDir = 'asc' | 'desc'
+
+const PAGE_SIZE = 10
 
 export default function AdminInventory() {
   const {
@@ -20,6 +24,10 @@ export default function AdminInventory() {
   const [adjReason, setAdjReason] = useState('')
   const [editThresholdId, setEditThresholdId] = useState<string | null>(null)
   const [thresholdVal, setThresholdVal] = useState('')
+  const [sortField, setSortField] = useState<SortField>('status')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [stockPage, setStockPage] = useState(1)
+  const [historyPage, setHistoryPage] = useState(1)
 
   if (loading) {
     return (
@@ -40,6 +48,23 @@ export default function AdminInventory() {
     return 'ok'
   }
 
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir('asc')
+    }
+    setStockPage(1)
+  }
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ChevronsUpDown size={13} className="text-[#c8c2b8]" />
+    return sortDir === 'asc' ? <ChevronUp size={13} className="text-[#b0925e]" /> : <ChevronDown size={13} className="text-[#b0925e]" />
+  }
+
+  const statusOrder = { out: 0, low: 1, ok: 2 }
+
   const filteredStock = stock
     .filter(s => {
       if (filterStatus === 'low') return getStatus(s) === 'low'
@@ -48,9 +73,25 @@ export default function AdminInventory() {
     })
     .filter(s => !search || s.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
-      const order = { out: 0, low: 1, ok: 2 }
-      return order[getStatus(a)] - order[getStatus(b)]
+      const dir = sortDir === 'asc' ? 1 : -1
+      switch (sortField) {
+        case 'name': return dir * a.name.localeCompare(b.name)
+        case 'currentStock': return dir * (a.currentStock - b.currentStock)
+        case 'value': return dir * ((a.currentStock * a.price) - (b.currentStock * b.price))
+        case 'status': return dir * (statusOrder[getStatus(a)] - statusOrder[getStatus(b)])
+        default: return 0
+      }
     })
+
+  const stockTotalPages = Math.max(1, Math.ceil(filteredStock.length / PAGE_SIZE))
+  const paginatedStock = filteredStock.slice((stockPage - 1) * PAGE_SIZE, stockPage * PAGE_SIZE)
+
+  const historyTotalPages = Math.max(1, Math.ceil(history.length / PAGE_SIZE))
+  const paginatedHistory = history.slice((historyPage - 1) * PAGE_SIZE, historyPage * PAGE_SIZE)
+
+  // Reset page when filters change
+  const handleFilterChange = (f: 'all' | 'low' | 'out') => { setFilterStatus(f); setStockPage(1) }
+  const handleSearchChange = (v: string) => { setSearch(v); setStockPage(1) }
 
   const handleAdjust = () => {
     const qty = parseInt(adjQty)
@@ -152,7 +193,7 @@ export default function AdminInventory() {
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9e9791]" />
               <input
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={e => handleSearchChange(e.target.value)}
                 placeholder="Search products..."
                 className="w-full pl-9 pr-3 py-2 rounded-lg border border-[#e8e2d9] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#b0925e]/30"
               />
@@ -160,7 +201,7 @@ export default function AdminInventory() {
             {(['all', 'low', 'out'] as const).map(f => (
               <button
                 key={f}
-                onClick={() => setFilterStatus(f)}
+                onClick={() => handleFilterChange(f)}
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   filterStatus === f ? 'bg-[#2c2825] text-white' : 'bg-white text-[#9e9791] border border-[#e8e2d9] hover:text-[#2c2825]'
                 }`}
@@ -176,16 +217,32 @@ export default function AdminInventory() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-[#faf8f5] border-b border-[#e8e2d9]">
-                    <th className="text-left px-4 py-3 text-xs font-medium text-[#9e9791]">Product</th>
-                    <th className="text-center px-4 py-3 text-xs font-medium text-[#9e9791]">In stock</th>
+                    <th className="text-left px-4 py-3">
+                      <button onClick={() => toggleSort('name')} className="inline-flex items-center gap-1 text-xs font-medium text-[#9e9791] hover:text-[#2c2825]">
+                        Product <SortIcon field="name" />
+                      </button>
+                    </th>
+                    <th className="text-center px-4 py-3">
+                      <button onClick={() => toggleSort('currentStock')} className="inline-flex items-center gap-1 text-xs font-medium text-[#9e9791] hover:text-[#2c2825]">
+                        In stock <SortIcon field="currentStock" />
+                      </button>
+                    </th>
                     <th className="text-center px-4 py-3 text-xs font-medium text-[#9e9791]">Low threshold</th>
-                    <th className="text-center px-4 py-3 text-xs font-medium text-[#9e9791]">Status</th>
-                    <th className="text-center px-4 py-3 text-xs font-medium text-[#9e9791]">Value</th>
+                    <th className="text-center px-4 py-3">
+                      <button onClick={() => toggleSort('status')} className="inline-flex items-center gap-1 text-xs font-medium text-[#9e9791] hover:text-[#2c2825]">
+                        Status <SortIcon field="status" />
+                      </button>
+                    </th>
+                    <th className="text-center px-4 py-3">
+                      <button onClick={() => toggleSort('value')} className="inline-flex items-center gap-1 text-xs font-medium text-[#9e9791] hover:text-[#2c2825]">
+                        Value <SortIcon field="value" />
+                      </button>
+                    </th>
                     <th className="text-right px-4 py-3 text-xs font-medium text-[#9e9791]">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#f0ebe3]">
-                  {filteredStock.map(item => {
+                  {paginatedStock.map(item => {
                     const status = getStatus(item)
                     return (
                       <tr key={item.productId} className="hover:bg-[#faf8f5]/50 transition-colors">
@@ -273,6 +330,40 @@ export default function AdminInventory() {
                 No products match your search
               </div>
             )}
+            {stockTotalPages > 1 && (
+              <div className="px-4 py-3 border-t border-[#e8e2d9] flex items-center justify-between">
+                <p className="text-xs text-[#9e9791]">
+                  Showing {(stockPage - 1) * PAGE_SIZE + 1}–{Math.min(stockPage * PAGE_SIZE, filteredStock.length)} of {filteredStock.length}
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setStockPage(p => Math.max(1, p - 1))}
+                    disabled={stockPage === 1}
+                    className="p-1.5 rounded-lg text-[#9e9791] hover:bg-[#faf8f5] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  {Array.from({ length: stockTotalPages }, (_, i) => i + 1).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setStockPage(p)}
+                      className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
+                        p === stockPage ? 'bg-[#2c2825] text-white' : 'text-[#9e9791] hover:bg-[#faf8f5]'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setStockPage(p => Math.min(stockTotalPages, p + 1))}
+                    disabled={stockPage === stockTotalPages}
+                    className="p-1.5 rounded-lg text-[#9e9791] hover:bg-[#faf8f5] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -292,7 +383,7 @@ export default function AdminInventory() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f0ebe3]">
-                {history.map(adj => (
+                {paginatedHistory.map(adj => (
                   <tr key={adj.id} className="hover:bg-[#faf8f5]/50 transition-colors">
                     <td className="px-4 py-3 text-[#9e9791] whitespace-nowrap">{formatDate(adj.date)}</td>
                     <td className="px-4 py-3 font-medium text-[#2c2825]">{adj.productName}</td>
@@ -318,6 +409,40 @@ export default function AdminInventory() {
           {history.length === 0 && (
             <div className="px-4 py-12 text-center text-sm text-[#9e9791]">
               No stock adjustments yet
+            </div>
+          )}
+          {historyTotalPages > 1 && (
+            <div className="px-4 py-3 border-t border-[#e8e2d9] flex items-center justify-between">
+              <p className="text-xs text-[#9e9791]">
+                Showing {(historyPage - 1) * PAGE_SIZE + 1}–{Math.min(historyPage * PAGE_SIZE, history.length)} of {history.length}
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                  disabled={historyPage === 1}
+                  className="p-1.5 rounded-lg text-[#9e9791] hover:bg-[#faf8f5] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                {Array.from({ length: historyTotalPages }, (_, i) => i + 1).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setHistoryPage(p)}
+                    className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
+                      p === historyPage ? 'bg-[#2c2825] text-white' : 'text-[#9e9791] hover:bg-[#faf8f5]'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setHistoryPage(p => Math.min(historyTotalPages, p + 1))}
+                  disabled={historyPage === historyTotalPages}
+                  className="p-1.5 rounded-lg text-[#9e9791] hover:bg-[#faf8f5] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
             </div>
           )}
         </div>
